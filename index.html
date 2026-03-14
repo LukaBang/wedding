@@ -144,6 +144,11 @@
       color: #ffffff;
     }
 
+    .submit-btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
     .reset-btn {
       background: #e5e7eb;
       color: #111827;
@@ -249,7 +254,7 @@
         </div>
 
         <div class="btn-row">
-          <button type="submit" class="submit-btn">등록</button>
+          <button type="submit" class="submit-btn" id="submitBtn">등록</button>
           <button type="button" class="reset-btn" id="resetBtn">정정</button>
         </div>
       </form>
@@ -263,7 +268,10 @@
 
     const form = document.getElementById('giftForm');
     const resetBtn = document.getElementById('resetBtn');
+    const submitBtn = document.getElementById('submitBtn');
     const statusText = document.getElementById('statusText');
+    const guestNameInput = document.getElementById('guestName');
+    const amountManwonInput = document.getElementById('amountManwon');
     const customMealTicket = document.getElementById('customMealTicket');
     const mealCustomWrap = document.getElementById('mealCustomWrap');
     const mealTicketRadios = document.querySelectorAll('input[name="mealTicket"]');
@@ -273,13 +281,18 @@
       statusText.style.color = isError ? '#dc2626' : '#2563eb';
     }
 
+    function setSubmitting(isSubmitting) {
+      submitBtn.disabled = isSubmitting;
+      submitBtn.textContent = isSubmitting ? '등록 중...' : '등록';
+    }
+
     function clearAllInputs(message = '입력창 내용을 모두 비웠습니다.') {
       form.reset();
       customMealTicket.value = '';
       customMealTicket.disabled = true;
       mealCustomWrap.classList.remove('active');
       setStatus(message, false);
-      document.getElementById('guestName').focus();
+      guestNameInput.focus();
     }
 
     function syncMealTicketInput() {
@@ -299,10 +312,15 @@
 
     function getMealTicketValue() {
       const selected = document.querySelector('input[name="mealTicket"]:checked');
-      if (!selected) return '';
+
+      if (!selected) {
+        return '';
+      }
+
       if (selected.value === 'custom') {
         return customMealTicket.value.trim();
       }
+
       return selected.value;
     }
 
@@ -317,26 +335,28 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      const guestName = document.getElementById('guestName').value.trim();
-      const amountManwon = document.getElementById('amountManwon').value.trim();
+      const guestName = guestNameInput.value.trim();
+      const amountManwon = amountManwonInput.value.trim();
       const mealTicket = getMealTicketValue();
       const inviteType = document.querySelector('input[name="inviteType"]:checked')?.value || '';
 
       if (!guestName) {
         setStatus('하객 이름을 입력해 주세요.', true);
-        document.getElementById('guestName').focus();
+        guestNameInput.focus();
         return;
       }
 
       if (!amountManwon || Number(amountManwon) <= 0 || !Number.isInteger(Number(amountManwon))) {
         setStatus('금액은 만원 단위 정수로 입력해 주세요.', true);
-        document.getElementById('amountManwon').focus();
+        amountManwonInput.focus();
         return;
       }
 
       if (!mealTicket || Number(mealTicket) <= 0 || !Number.isInteger(Number(mealTicket))) {
         setStatus('식권 수를 올바르게 선택하거나 입력해 주세요.', true);
-        if (!customMealTicket.disabled) customMealTicket.focus();
+        if (!customMealTicket.disabled) {
+          customMealTicket.focus();
+        }
         return;
       }
 
@@ -351,44 +371,46 @@
       }
 
       const payload = {
-        guestName,
+        guestName: guestName,
         amountManwon: Number(amountManwon),
         mealTicket: Number(mealTicket),
-        inviteType
+        inviteType: inviteType
       };
 
-      const submitButton = form.querySelector('.submit-btn');
-      submitButton.disabled = true;
-      submitButton.textContent = '등록 중...';
+      setSubmitting(true);
       setStatus('등록 중입니다...');
 
       try {
         const response = await fetch(SCRIPT_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8'
-          },
+          redirect: 'follow',
           body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        const responseText = await response.text();
+        let result;
 
-        if (!response.ok || !result.ok) {
+        try {
+          result = JSON.parse(responseText);
+        } catch (parseError) {
+          throw new Error('응답 파싱 실패');
+        }
+
+        if (!result.ok) {
           throw new Error(result.error || '등록 실패');
         }
 
         clearAllInputs('등록이 완료되었습니다.');
       } catch (error) {
         console.error(error);
-        setStatus('저장 중 오류가 발생했습니다.', true);
+        setStatus('오류: ' + error.message, true);
       } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = '등록';
+        setSubmitting(false);
       }
     });
 
     window.addEventListener('load', () => {
-      document.getElementById('guestName').focus();
+      guestNameInput.focus();
     });
   </script>
 </body>
