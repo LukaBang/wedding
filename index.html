@@ -209,16 +209,16 @@
           <span class="label">[식권]</span>
           <div class="option-grid">
             <label class="option-card">
-              <input type="radio" name="mealTicket" value="1" required />
+              <input type="radio" name="mealTicket" value="0" required />
+              <span>0</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="mealTicket" value="1" />
               <span>1</span>
             </label>
             <label class="option-card">
               <input type="radio" name="mealTicket" value="2" />
               <span>2</span>
-            </label>
-            <label class="option-card">
-              <input type="radio" name="mealTicket" value="3" />
-              <span>3</span>
             </label>
             <label class="option-card">
               <input type="radio" name="mealTicket" value="custom" />
@@ -352,7 +352,7 @@
         return;
       }
 
-      if (!mealTicket || Number(mealTicket) <= 0 || !Number.isInteger(Number(mealTicket))) {
+      if (mealTicket === '' || Number(mealTicket) < 0 || !Number.isInteger(Number(mealTicket))) {
         setStatus('식권 수를 올바르게 선택하거나 입력해 주세요.', true);
         if (!customMealTicket.disabled) {
           customMealTicket.focus();
@@ -388,16 +388,27 @@
         });
 
         const responseText = await response.text();
-        let result;
+        let result = null;
 
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
-          throw new Error('응답 파싱 실패');
+          const scriptOrigin = new URL(SCRIPT_URL).origin;
+          const finalOrigin = response.url ? new URL(response.url).origin : '';
+
+          if (finalOrigin && finalOrigin !== scriptOrigin) {
+            throw new Error('응답이 로그인 페이지나 다른 페이지로 리디렉션되었습니다. 웹앱을 새로 배포하거나 접근 권한을 다시 확인해 주세요.');
+          }
+
+          throw new Error('응답 파싱 실패: ' + responseText.slice(0, 120));
         }
 
-        if (!result.ok) {
-          throw new Error(result.error || '등록 실패');
+        if (!response.ok) {
+          throw new Error('HTTP 오류: ' + response.status);
+        }
+
+        if (!result || !result.ok) {
+          throw new Error((result && result.error) || '등록 실패');
         }
 
         clearAllInputs('등록이 완료되었습니다.');
