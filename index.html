@@ -370,6 +370,11 @@
         return;
       }
 
+      if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(SCRIPT_URL)) {
+        setStatus('웹앱 URL 형식이 올바르지 않습니다. /exec 주소 전체를 넣어 주세요.', true);
+        return;
+      }
+
       const payload = {
         guestName: guestName,
         amountManwon: Number(amountManwon),
@@ -393,10 +398,10 @@
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
-          const scriptOrigin = new URL(SCRIPT_URL).origin;
-          const finalOrigin = response.url ? new URL(response.url).origin : '';
+          const scriptOrigin = /^https?:\/\//.test(SCRIPT_URL) ? new URL(SCRIPT_URL).origin : '';
+          const finalOrigin = response.url && /^https?:\/\//.test(response.url) ? new URL(response.url).origin : '';
 
-          if (finalOrigin && finalOrigin !== scriptOrigin) {
+          if (scriptOrigin && finalOrigin && finalOrigin !== scriptOrigin) {
             throw new Error('응답이 로그인 페이지나 다른 페이지로 리디렉션되었습니다. 웹앱을 새로 배포하거나 접근 권한을 다시 확인해 주세요.');
           }
 
