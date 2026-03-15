@@ -447,39 +447,23 @@
       btn.disabled = true;
       setStatus("저장 중…", "busy");
 
-      // URLSearchParams + no-cors: GAS e.parameter.payload 로 수신
-      // no-cors는 응답을 읽을 수 없지만 요청은 정상 전달됨
+      // GET 쿼리스트링 방식 - CORS preflight 없음, GAS 리다이렉트도 정상 추적
       try {
-        const body = new URLSearchParams({ payload: JSON.stringify(vals) });
-        await fetch(GAS_URL, {
-          method: "POST",
-          mode:   "no-cors",
-          body,
-        });
+        const url = GAS_URL + "?payload=" + encodeURIComponent(JSON.stringify(vals));
+        const res  = await fetch(url);
+        const json = await res.json();
+        if (json.success) {
+          session.count  += 1;
+          session.amount += vals.amount_won / 10000;
+          session.meal   += vals.meal_ticket;
+          updateSummary();
+          setStatus("✓ 등록되었습니다.", "ok");
+          clearForm();
+        } else {
+          setStatus("저장 실패: " + (json.error || "알 수 없는 오류"), "err");
+        }
       } catch(e) {
-        // no-cors에서는 실제로 여기 잘 안 옴
-      }
-
-      // 1초 후 GET으로 행 수 확인해서 실제 저장 검증
-      const prevCount = await getSheetCount();
-      await new Promise(r => setTimeout(r, 1200));
-      const newCount = await getSheetCount();
-
-      if (newCount > prevCount) {
-        session.count  += 1;
-        session.amount += vals.amount_won / 10000;
-        session.meal   += vals.meal_ticket;
-        updateSummary();
-        setStatus("✓ 등록되었습니다.", "ok");
-        clearForm();
-      } else {
-        // GET 자체가 CORS로 막힐 수 있으니 blind 성공 처리
-        session.count  += 1;
-        session.amount += vals.amount_won / 10000;
-        session.meal   += vals.meal_ticket;
-        updateSummary();
-        setStatus("✓ 전송 완료 (시트에서 확인하세요).", "ok");
-        clearForm();
+        setStatus("오류: " + e.message, "err");
       }
       btn.disabled = false;
     }
