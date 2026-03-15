@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>축의금 관리 대장</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 24px;
+      text-align: center;
+      font-size: 30px;
+      line-height: 1.2;
+    }
+
+    .field {
+      margin-bottom: 22px;
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 10px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      height: 56px;
+      padding: 0 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 14px;
+      font-size: 18px;
+      background: #ffffff;
+      color: #111827;
+      outline: none;
+    }
+
+    input[type="text"]:focus,
+    input[type="number"]:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .hint {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .option-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 56px;
+      border: 1px solid #d1d5db;
+      border-radius: 14px;
+      background: #f9fafb;
+      cursor: pointer;
+      user-select: none;
+      font-size: 17px;
+      font-weight: 700;
+      padding: 10px 12px;
+    }
+
+    .option-card input {
+      margin: 0;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .meal-custom-wrap {
+      margin-top: 12px;
+      display: none;
+    }
+
+    .meal-custom-wrap.active {
+      display: block;
+    }
+
+    .invite-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 28px;
+    }
+
+    button {
+      height: 60px;
+      border: 0;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .submit-btn {
+      background: #111827;
+      color: #ffffff;
+    }
+
+    .reset-btn {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .status {
+      margin-top: 18px;
+      min-height: 24px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #2563eb;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    iframe {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .wrap {
+        padding: 12px;
+      }
+
+      .card {
+        padding: 18px;
+        border-radius: 18px;
+      }
+
+      h1 {
+        font-size: 26px;
+      }
+
+      .option-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .btn-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>축의금 관리 대장</h1>
+
+      <form
+        id="giftForm"
+        method="POST"
+        target="submitFrame"
+        action="https://script.google.com/macros/s/AKfycbxU0_gdedr8Ohe85CXK0YPOlASgqbJLiZEgrGxf8FBXOZZoUBWRAHMzm3rRc8uKjblT/exec"
+      >
+        <div class="field">
+          <label class="label" for="guestName">[하객]</label>
+          <input
+            type="text"
+            id="guestName"
+            name="guestName"
+            placeholder="하객 이름 입력"
+            autocomplete="off"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label class="label" for="amountManwon">[금액]</label>
+          <input
+            type="number"
+            id="amountManwon"
+            name="amountManwon"
+            min="1"
+            step="1"
+            inputmode="numeric"
+            placeholder="만원 단위 입력"
+            required
+          />
+          <div class="hint">예: 5 입력 시 5만원으로 저장</div>
+        </div>
+
+        <div class="field">
+          <span class="label">[식권]</span>
+          <div class="option-grid">
+            <label class="option-card">
+              <input type="radio" name="mealTicketMode" value="0" required />
+              <span>0</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="mealTicketMode" value="1" />
+              <span>1</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="mealTicketMode" value="2" />
+              <span>2</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="mealTicketMode" value="custom" />
+              <span>직접입력</span>
+            </label>
+          </div>
+
+          <div class="meal-custom-wrap" id="mealCustomWrap">
+            <input
+              type="number"
+              id="customMealTicket"
+              min="0"
+              step="1"
+              inputmode="numeric"
+              placeholder="식권 수 직접입력"
+              disabled
+            />
+          </div>
+
+          <input type="hidden" id="mealTicket" name="mealTicket" />
+        </div>
+
+        <div class="field">
+          <span class="label">[초대]</span>
+          <div class="invite-grid">
+            <label class="option-card">
+              <input type="radio" name="inviteType" value="부" required />
+              <span>부</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="inviteType" value="모" />
+              <span>모</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="inviteType" value="본인" />
+              <span>본인</span>
+            </label>
+            <label class="option-card">
+              <input type="radio" name="inviteType" value="기타" />
+              <span>기타</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button type="submit" class="submit-btn" id="submitBtn">등록</button>
+          <button type="button" class="reset-btn" id="resetBtn">정정</button>
+        </div>
+      </form>
+
+      <div class="status" id="statusText"></div>
+    </div>
+  </div>
+
+  <iframe name="submitFrame" id="submitFrame"></iframe>
+
+  <script>
+    const form = document.getElementById('giftForm');
+    const resetBtn = document.getElementById('resetBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const statusText = document.getElementById('statusText');
+    const guestNameInput = document.getElementById('guestName');
+    const amountManwonInput = document.getElementById('amountManwon');
+    const customMealTicketInput = document.getElementById('customMealTicket');
+    const mealCustomWrap = document.getElementById('mealCustomWrap');
+    const mealTicketModes = document.querySelectorAll('input[name="mealTicketMode"]');
+    const mealTicketHidden = document.getElementById('mealTicket');
+
+    function setStatus(message, isError = false) {
+      statusText.textContent = message;
+      statusText.style.color = isError ? '#dc2626' : '#2563eb';
+    }
+
+    function resetMealCustomInput() {
+      customMealTicketInput.value = '';
+      customMealTicketInput.disabled = true;
+      mealCustomWrap.classList.remove('active');
+    }
+
+    function clearAllInputs(message = '입력창 내용을 모두 비웠습니다.') {
+      form.reset();
+      mealTicketHidden.value = '';
+      resetMealCustomInput();
+      submitBtn.disabled = false;
+      submitBtn.textContent = '등록';
+      setStatus(message, false);
+      guestNameInput.focus();
+    }
+
+    function syncMealTicketInput() {
+      const selected = document.querySelector('input[name="mealTicketMode"]:checked');
+      const isCustom = selected && selected.value === 'custom';
+
+      if (isCustom) {
+        mealCustomWrap.classList.add('active');
+        customMealTicketInput.disabled = false;
+        customMealTicketInput.focus();
+      } else {
+        resetMealCustomInput();
+      }
+    }
+
+    function getMealTicketValue() {
+      const selected = document.querySelector('input[name="mealTicketMode"]:checked');
+
+      if (!selected) {
+        return '';
+      }
+
+      if (selected.value === 'custom') {
+        return customMealTicketInput.value.trim();
+      }
+
+      return selected.value;
+    }
+
+    mealTicketModes.forEach((radio) => {
+      radio.addEventListener('change', syncMealTicketInput);
+    });
+
+    resetBtn.addEventListener('click', () => {
+      clearAllInputs();
+    });
+
+    form.addEventListener('submit', (e) => {
+      const guestName = guestNameInput.value.trim();
+      const amountManwon = amountManwonInput.value.trim();
+      const mealTicket = getMealTicketValue();
+      const inviteType = document.querySelector('input[name="inviteType"]:checked')?.value || '';
+
+      if (!guestName) {
+        e.preventDefault();
+        setStatus('하객 이름을 입력해 주세요.', true);
+        guestNameInput.focus();
+        return;
+      }
+
+      if (!amountManwon || Number(amountManwon) <= 0 || !Number.isInteger(Number(amountManwon))) {
+        e.preventDefault();
+        setStatus('금액은 만원 단위 정수로 입력해 주세요.', true);
+        amountManwonInput.focus();
+        return;
+      }
+
+      if (mealTicket === '' || Number(mealTicket) < 0 || !Number.isInteger(Number(mealTicket))) {
+        e.preventDefault();
+        setStatus('식권 수를 올바르게 선택하거나 입력해 주세요.', true);
+        if (!customMealTicketInput.disabled) {
+          customMealTicketInput.focus();
+        }
+        return;
+      }
+
+      if (!inviteType) {
+        e.preventDefault();
+        setStatus('초대 구분을 선택해 주세요.', true);
+        return;
+      }
+
+      mealTicketHidden.value = String(Number(mealTicket));
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '등록 중...';
+      setStatus('등록 요청을 보냈습니다. 잠시 후 초기화됩니다...');
+
+      setTimeout(() => {
+        clearAllInputs('등록이 완료된 것으로 처리했습니다. 시트에서 확인해 주세요.');
+      }, 1200);
+    });
+
+    window.addEventListener('load', () => {
+      guestNameInput.focus();
+    });
+  </script>
+</body>
+</html>
