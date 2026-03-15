@@ -161,7 +161,8 @@
       font-size: 15px;
       font-weight: 700;
       color: #2563eb;
-      word-break: keep-all;
+      word-break: break-word;
+      white-space: pre-wrap;
     }
 
     @media (max-width: 640px) {
@@ -196,12 +197,28 @@
       <form id="giftForm">
         <div class="field">
           <label class="label" for="guestName">[하객]</label>
-          <input type="text" id="guestName" name="guestName" placeholder="하객 이름 입력" autocomplete="off" required />
+          <input
+            type="text"
+            id="guestName"
+            name="guestName"
+            placeholder="하객 이름 입력"
+            autocomplete="off"
+            required
+          />
         </div>
 
         <div class="field">
           <label class="label" for="amountManwon">[금액]</label>
-          <input type="number" id="amountManwon" name="amountManwon" min="1" step="1" inputmode="numeric" placeholder="만원 단위 입력" required />
+          <input
+            type="number"
+            id="amountManwon"
+            name="amountManwon"
+            min="1"
+            step="1"
+            inputmode="numeric"
+            placeholder="만원 단위 입력"
+            required
+          />
           <div class="hint">예: 5 입력 시 5만원으로 저장</div>
         </div>
 
@@ -227,7 +244,15 @@
           </div>
 
           <div class="meal-custom-wrap" id="mealCustomWrap">
-            <input type="number" id="customMealTicket" min="1" step="1" inputmode="numeric" placeholder="식권 수 직접입력" disabled />
+            <input
+              type="number"
+              id="customMealTicket"
+              min="0"
+              step="1"
+              inputmode="numeric"
+              placeholder="식권 수 직접입력"
+              disabled
+            />
           </div>
         </div>
 
@@ -264,7 +289,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = '여기에_웹앱_URL_입력';
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxU0_gdedr8Ohe85CXK0YPOlASgqbJLiZEgrGxf8FBXOZZoUBWRAHMzm3rRc8uKjblT/exec';
 
     const form = document.getElementById('giftForm');
     const resetBtn = document.getElementById('resetBtn');
@@ -272,7 +297,7 @@
     const statusText = document.getElementById('statusText');
     const guestNameInput = document.getElementById('guestName');
     const amountManwonInput = document.getElementById('amountManwon');
-    const customMealTicket = document.getElementById('customMealTicket');
+    const customMealTicketInput = document.getElementById('customMealTicket');
     const mealCustomWrap = document.getElementById('mealCustomWrap');
     const mealTicketRadios = document.querySelectorAll('input[name="mealTicket"]');
 
@@ -286,11 +311,15 @@
       submitBtn.textContent = isSubmitting ? '등록 중...' : '등록';
     }
 
+    function resetMealCustomInput() {
+      customMealTicketInput.value = '';
+      customMealTicketInput.disabled = true;
+      mealCustomWrap.classList.remove('active');
+    }
+
     function clearAllInputs(message = '입력창 내용을 모두 비웠습니다.') {
       form.reset();
-      customMealTicket.value = '';
-      customMealTicket.disabled = true;
-      mealCustomWrap.classList.remove('active');
+      resetMealCustomInput();
       setStatus(message, false);
       guestNameInput.focus();
     }
@@ -301,12 +330,10 @@
 
       if (isCustom) {
         mealCustomWrap.classList.add('active');
-        customMealTicket.disabled = false;
-        customMealTicket.focus();
+        customMealTicketInput.disabled = false;
+        customMealTicketInput.focus();
       } else {
-        mealCustomWrap.classList.remove('active');
-        customMealTicket.disabled = true;
-        customMealTicket.value = '';
+        resetMealCustomInput();
       }
     }
 
@@ -318,10 +345,14 @@
       }
 
       if (selected.value === 'custom') {
-        return customMealTicket.value.trim();
+        return customMealTicketInput.value.trim();
       }
 
       return selected.value;
+    }
+
+    function isValidScriptUrl(url) {
+      return /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url);
     }
 
     mealTicketRadios.forEach((radio) => {
@@ -354,8 +385,8 @@
 
       if (mealTicket === '' || Number(mealTicket) < 0 || !Number.isInteger(Number(mealTicket))) {
         setStatus('식권 수를 올바르게 선택하거나 입력해 주세요.', true);
-        if (!customMealTicket.disabled) {
-          customMealTicket.focus();
+        if (!customMealTicketInput.disabled) {
+          customMealTicketInput.focus();
         }
         return;
       }
@@ -365,12 +396,12 @@
         return;
       }
 
-      if (!SCRIPT_URL || SCRIPT_URL === 'https://script.google.com/macros/s/AKfycbxU0_gdedr8Ohe85CXK0YPOlASgqbJLiZEgrGxf8FBXOZZoUBWRAHMzm3rRc8uKjblT/exec') {
+      if (!SCRIPT_URL || !SCRIPT_URL.trim()) {
         setStatus('웹앱 URL이 아직 입력되지 않았습니다.', true);
         return;
       }
 
-      if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(SCRIPT_URL)) {
+      if (!isValidScriptUrl(SCRIPT_URL)) {
         setStatus('웹앱 URL 형식이 올바르지 않습니다. /exec 주소 전체를 넣어 주세요.', true);
         return;
       }
@@ -402,10 +433,10 @@
           const finalOrigin = response.url && /^https?:\/\//.test(response.url) ? new URL(response.url).origin : '';
 
           if (scriptOrigin && finalOrigin && finalOrigin !== scriptOrigin) {
-            throw new Error('응답이 로그인 페이지나 다른 페이지로 리디렉션되었습니다. 웹앱을 새로 배포하거나 접근 권한을 다시 확인해 주세요.');
+            throw new Error('응답이 다른 페이지로 이동되었습니다. 웹앱을 다시 배포했는지와 접근 권한을 확인해 주세요.');
           }
 
-          throw new Error('응답 파싱 실패: ' + responseText.slice(0, 120));
+          throw new Error('응답 파싱 실패: ' + responseText.slice(0, 160));
         }
 
         if (!response.ok) {
