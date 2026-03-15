@@ -447,11 +447,11 @@
       btn.disabled = true;
       setStatus("저장 중…", "busy");
 
-      // GET 쿼리스트링 방식 - CORS preflight 없음, GAS 리다이렉트도 정상 추적
       try {
-        const url = GAS_URL + "?payload=" + encodeURIComponent(JSON.stringify(vals));
+        const url  = GAS_URL + "?payload=" + encodeURIComponent(JSON.stringify(vals));
         const res  = await fetch(url);
-        const json = await res.json();
+        const text = await res.text();
+        const json = JSON.parse(text);
         if (json.success) {
           session.count  += 1;
           session.amount += vals.amount_won / 10000;
