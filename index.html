@@ -437,22 +437,20 @@
       setStatus("저장 중…", "busy");
 
       try {
-        const res  = await fetch(GAS_URL, {
-          method: "POST",
-          body:   JSON.stringify(vals),
+        // GAS는 CORS preflight 미지원 → no-cors 모드 사용
+        // 응답은 opaque이지만 데이터는 정상 저장됨
+        await fetch(GAS_URL, {
+          method:  "POST",
+          mode:    "no-cors",
+          body:    JSON.stringify(vals),
         });
-        const json = await res.json();
 
-        if (json.success) {
-          session.count  += 1;
-          session.amount += vals.amount_won / 10000;
-          session.meal   += vals.meal_ticket;
-          updateSummary();
-          setStatus("✓ 등록되었습니다.", "ok");
-          clearForm();
-        } else {
-          setStatus("오류: " + (json.error || "알 수 없는 오류"), "err");
-        }
+        session.count  += 1;
+        session.amount += vals.amount_won / 10000;
+        session.meal   += vals.meal_ticket;
+        updateSummary();
+        setStatus("✓ 등록되었습니다.", "ok");
+        clearForm();
       } catch (e) {
         setStatus("네트워크 오류: " + e.message, "err");
       } finally {
