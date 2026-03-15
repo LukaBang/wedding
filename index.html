@@ -415,7 +415,18 @@
     }
 
     // ── 상태 메시지 ─────────────────────────────────────────
-    function setStatus(msg, type = "ok") {
+    // ── 시트 행 수 확인 (저장 검증용) ──────────────────────
+    async function getSheetCount() {
+      try {
+        const res  = await fetch(GAS_URL);
+        const json = await res.json();
+        return json.count ?? -1;
+      } catch {
+        return -1;
+      }
+    }
+
+        function setStatus(msg, type = "ok") {
       const el = document.getElementById("status");
       el.textContent = msg;
       el.className = type;
@@ -436,26 +447,54 @@
       btn.disabled = true;
       setStatus("저장 중…", "busy");
 
-      try {
-        // GAS는 CORS preflight 미지원 → no-cors 모드 사용
-        // 응답은 opaque이지만 데이터는 정상 저장됨
-        await fetch(GAS_URL, {
-          method:  "POST",
-          mode:    "no-cors",
-          body:    JSON.stringify(vals),
-        });
+      // GAS는 CORS를 지원하지 않으므로 hidden form + iframe 방식 사용
+      // iframe이 로드되면 GET으로 시트 행 수를 확인해 실제 저장 여부 검증
+      const prevCount = await getSheetCount();
 
-        session.count  += 1;
-        session.amount += vals.amount_won / 10000;
-        session.meal   += vals.meal_ticket;
-        updateSummary();
-        setStatus("✓ 등록되었습니다.", "ok");
-        clearForm();
-      } catch (e) {
-        setStatus("네트워크 오류: " + e.message, "err");
-      } finally {
+      const iframeName = "gas_frame_" + Date.now();
+      const iframe = document.createElement("iframe");
+      iframe.name  = iframeName;
+      iframe.style.display = "none";
+      document.body.appendChild(iframe);
+
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = GAS_URL;
+      form.target = iframeName;
+
+      const input = document.createElement("input");
+      input.type  = "hidden";
+      input.name  = "payload";
+      input.value = JSON.stringify(vals);
+      form.appendChild(input);
+      document.body.appendChild(form);
+
+      iframe.onload = async () => {
+        document.body.removeChild(form);
+        document.body.removeChild(iframe);
+
+        // GET으로 실제 저장 확인 (최대 3회 재시도)
+        let saved = false;
+        for (let i = 0; i < 3; i++) {
+          await new Promise(r => setTimeout(r, 600));
+          const newCount = await getSheetCount();
+          if (newCount > prevCount) { saved = true; break; }
+        }
+
+        if (saved) {
+          session.count  += 1;
+          session.amount += vals.amount_won / 10000;
+          session.meal   += vals.meal_ticket;
+          updateSummary();
+          setStatus("✓ 등록되었습니다.", "ok");
+          clearForm();
+        } else {
+          setStatus("⚠️ 저장 확인 실패. 시트를 직접 확인해주세요.", "err");
+        }
         btn.disabled = false;
-      }
+      };
+
+      form.submit();
     }
 
     // ── 폼 초기화 ───────────────────────────────────────────
